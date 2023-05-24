@@ -12,6 +12,7 @@ import javafx.util.StringConverter;
 
 import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -59,7 +60,13 @@ public class App extends Application {
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
 
         // Generate data for the series
-        generateAndScaleData(series);
+        int maxIntersectionCount = generateAndScaleData(series);
+
+        yAxis.setAutoRanging(false);
+        yAxis.setLowerBound(0);        
+        yAxis.setUpperBound(maxIntersectionCount + 1);
+        yAxis.setTickUnit(1.0);
+        yAxis.setMinorTickVisible(false);
 
         // Add the series to the line chart
         lineChart.getData().add(series);
@@ -69,7 +76,6 @@ public class App extends Application {
 
         // Remove a legenda
         lineChart.setLegendVisible(false);
-
 
         // Create the scene and add the line chart
         Scene scene = new Scene(lineChart, 800, 600);
@@ -82,38 +88,60 @@ public class App extends Application {
     }
 
 
-    private void generateAndScaleData(XYChart.Series<Number, Number> series) {
+    private int generateAndScaleData(XYChart.Series<Number, Number> series) {
         // Assuming you have a list of appointments with start and end timestamps
         List<Appointment> appointments = getAppointments();
+
+        // Add the data points to the series
+        long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
+        long end = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
+
+        int maxIntersectionCount = 0;
     
         // Convert the timestamps to time values in minutes
-        for (int i = 0; i < 24; i++) {
-
-            // Add the data points to the series
-            long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime() / (1000 * 60);
-            long end = Timestamp.valueOf("2023-01-01 00:00:00").getTime() / (1000 * 60);
-
-            double position = i / 24.0;
-
-            long time = (long) (start + (end - start) * position);
+        for (long time = start; time <= end; time += 60000) {
+            
+            double position = (double) (time - start) / (end - start) * 24 * 60;
 
             // Count the number of intersections for the current time
             int intersectionCount = 0;
             for (Appointment apt : appointments) {
-                long aptStart = apt.getStart().toLocalDateTime().toLocalTime().atDate(LocalDate.of(2023, 1, 1));
-                long aptEnd = apt.getEnd().toLocalDateTime().toLocalTime().atDate(LocalDate.of(2023, 1, 1));
-                if (time >= aptStart && time <= aptEnd) {
-                    intersectionCount++;
+
+                LocalDateTime aptStartDateTime = apt.getStart().toLocalDateTime();
+                LocalDateTime aptEndDateTime = apt.getEnd().toLocalDateTime();   
+
+                int dayCount = aptEndDateTime.toLocalDate().compareTo(aptStartDateTime.toLocalDate());
+             
+                long aptStart = Timestamp.valueOf(aptStartDateTime.toLocalTime().atDate(
+                    LocalDate.of(2023, 1, 1)
+                )).getTime();
+
+                long aptEnd = Timestamp.valueOf(aptEndDateTime.toLocalTime().atDate(
+                    LocalDate.of(2023, 1, 1 + dayCount)
+                )).getTime();
+
+                final long day = 86400000;
+
+                // System.out.println("S: " + time + " >= " + aptStart + " && " + time + " <= " + aptEnd);
+                for (int i = 0; i < 1 + dayCount; i++) {
+                    if (time + (i * day) >= aptStart && time + (i * day) <= aptEnd) intersectionCount++;
                 }
             }
 
+            // System.out.println(position);
+
+            // System.out.println("[" + i + "] position: " + String.format("%.1f", position) + " | height: " + intersectionCount + " | " + start + " | " + end);
+
             // Add the data point to the series
             series.getData().add(new XYChart.Data<>(position, intersectionCount));
+            if (intersectionCount > maxIntersectionCount) maxIntersectionCount = intersectionCount;
 
         }
+
+        return maxIntersectionCount;
     }
     
-    private void generateData(XYChart.Series<Number, Number> series) {
+    public void generateData(XYChart.Series<Number, Number> series) {
         // Sample list of appointments
         ObservableList<Appointment> appointments = getAppointments();
 
@@ -142,11 +170,12 @@ public class App extends Application {
         // Here, we use a dummy list of appointments for demonstration purposes
         ObservableList<Appointment> appointments = FXCollections.observableArrayList();
 
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 08:30:00"), Timestamp.valueOf("2023-01-01 09:30:00")));
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 11:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 13:30:00")));
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 15:00:00"), Timestamp.valueOf("2023-01-01 16:30:00")));
+        // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 08:30:00"), Timestamp.valueOf("2023-01-01 09:30:00")));
+        // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 11:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
+        // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 13:30:00")));
+        // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
+        // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 15:00:00"), Timestamp.valueOf("2023-01-01 16:30:00")));
+        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 23:00:00"), Timestamp.valueOf("2023-01-02 01:00:00")));
 
         return appointments;
     }
