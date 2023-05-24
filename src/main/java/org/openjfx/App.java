@@ -21,34 +21,17 @@ public class App extends Application {
     @Override public void start(Stage stage) {
 
         // Create the x-axis representing time
-        NumberAxis xAxis = new NumberAxis(0, 24 * 60, 60);
+        NumberAxis xAxis = new NumberAxis(0, 1440, 60);
         xAxis.setTickLabelFormatter(new StringConverter<Number>() {
-            @Override
-            public String toString(Number object) {
+            @Override public Number fromString(String string) { return null; }
+            @Override public String toString (Number object) {
                 int minutes = object.intValue();
-                int hours = minutes / 60;
-                return String.format("%02d:%02d", hours % 24, minutes % 60);
-            }
-
-            @Override
-            public Number fromString(String string) {
-                return null;
+                return String.format("%02d:%02d", (minutes / 60) % 24, minutes % 60);
             }
         });
 
         // Create the y-axis representing integers
         NumberAxis yAxis = new NumberAxis();
-        // yAxis.setTickLabelFormatter(new StringConverter<Number>() {
-        //     @Override
-        //     public String toString(Number object) {
-        //         return String.valueOf(object.intValue());
-        //     }
-
-        //     @Override
-        //     public Number fromString(String string) {
-        //         return null;
-        //     }
-        // });
 
         // Create the line chart
         LineChart<Number, Number> lineChart = new LineChart<>(xAxis, yAxis);
@@ -96,8 +79,11 @@ public class App extends Application {
         long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
         long end = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
 
+        final LocalDate defaultDate = LocalDate.of(2023, 1, 1);
+        final long day = 86400000;
+
         int maxIntersectionCount = 0;
-    
+
         // Convert the timestamps to time values in minutes
         for (long time = start; time <= end; time += 60000) {
             
@@ -113,24 +99,18 @@ public class App extends Application {
                 int dayCount = aptEndDateTime.toLocalDate().compareTo(aptStartDateTime.toLocalDate());
              
                 long aptStart = Timestamp.valueOf(aptStartDateTime.toLocalTime().atDate(
-                    LocalDate.of(2023, 1, 1)
+                    defaultDate
                 )).getTime();
 
                 long aptEnd = Timestamp.valueOf(aptEndDateTime.toLocalTime().atDate(
-                    LocalDate.of(2023, 1, 1 + dayCount)
+                    defaultDate.plusDays(dayCount)
                 )).getTime();
-
-                final long day = 86400000;
 
                 // System.out.println("S: " + time + " >= " + aptStart + " && " + time + " <= " + aptEnd);
                 for (int i = 0; i < 1 + dayCount; i++) {
                     if (time + (i * day) >= aptStart && time + (i * day) <= aptEnd) intersectionCount++;
                 }
             }
-
-            // System.out.println(position);
-
-            // System.out.println("[" + i + "] position: " + String.format("%.1f", position) + " | height: " + intersectionCount + " | " + start + " | " + end);
 
             // Add the data point to the series
             series.getData().add(new XYChart.Data<>(position, intersectionCount));
@@ -141,30 +121,6 @@ public class App extends Application {
         return maxIntersectionCount;
     }
     
-    public void generateData(XYChart.Series<Number, Number> series) {
-        // Sample list of appointments
-        ObservableList<Appointment> appointments = getAppointments();
-
-        // Iterate over the x-axis values (0.0 to 1.0)
-        for (double x = 0; x <= 1; x += 0.01) {
-            // Calculate the time for the current x-axis value
-            long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
-            long end = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
-            long time = (long) (start + (end - start) * x);
-
-            // Count the number of intersections for the current time
-            int intersectionCount = 0;
-            for (Appointment apt : appointments) {
-                if (time >= apt.getStart().getTime() && time <= apt.getEnd().getTime()) {
-                    intersectionCount++;
-                }
-            }
-
-            // Add the data point to the series
-            series.getData().add(new XYChart.Data<>(x, intersectionCount));
-        }
-    }
-
     private ObservableList<Appointment> getAppointments() {
         // Replace this with your actual data retrieval logic
         // Here, we use a dummy list of appointments for demonstration purposes
@@ -175,7 +131,7 @@ public class App extends Application {
         // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 13:30:00")));
         // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
         // appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 15:00:00"), Timestamp.valueOf("2023-01-01 16:30:00")));
-        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 23:00:00"), Timestamp.valueOf("2023-01-02 01:00:00")));
+        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 23:00:00"), Timestamp.valueOf("2023-01-06 01:00:00")));
 
         return appointments;
     }
