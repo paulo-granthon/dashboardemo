@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.util.List;
 
 
@@ -98,8 +99,10 @@ public class App extends Application {
 
             // Count the number of intersections for the current time
             int intersectionCount = 0;
-            for (Appointment appointment : appointments) {
-                if (appointment.intersects(time)) {
+            for (Appointment apt : appointments) {
+                long aptStart = apt.getStart().toLocalDateTime().toLocalTime().atDate(LocalDate.of(2023, 1, 1));
+                long aptEnd = apt.getEnd().toLocalDateTime().toLocalTime().atDate(LocalDate.of(2023, 1, 1));
+                if (time >= aptStart && time <= aptEnd) {
                     intersectionCount++;
                 }
             }
@@ -117,14 +120,14 @@ public class App extends Application {
         // Iterate over the x-axis values (0.0 to 1.0)
         for (double x = 0; x <= 1; x += 0.01) {
             // Calculate the time for the current x-axis value
-            long startTimestamp = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
-            long endTimestamp = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
-            long time = (long) (startTimestamp + (endTimestamp - startTimestamp) * x);
+            long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
+            long end = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
+            long time = (long) (start + (end - start) * x);
 
             // Count the number of intersections for the current time
             int intersectionCount = 0;
-            for (Appointment appointment : appointments) {
-                if (appointment.intersects(time)) {
+            for (Appointment apt : appointments) {
+                if (time >= apt.getStart().getTime() && time <= apt.getEnd().getTime()) {
                     intersectionCount++;
                 }
             }

@@ -11,10 +11,6 @@ class Appointment {
         this.endTime = endTime;
     }
 
-    boolean intersects(long time) {
-        return time >= startTime.getTime() && time <= endTime.getTime();
-    }
-
     public Timestamp getStart() {
         return startTime;
     }
