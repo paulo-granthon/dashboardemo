@@ -11,6 +11,7 @@ import javafx.stage.Stage;
 import javafx.util.StringConverter;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 
 public class App extends Application {
@@ -18,21 +19,20 @@ public class App extends Application {
     @Override public void start(Stage stage) {
 
         // Create the x-axis representing time
-        NumberAxis xAxis = new NumberAxis();
-        // xAxis.setTickLabelFormatter(new StringConverter<Number>() {
-        //     @Override
-        //     public String toString(Number object) {
-        //         int minutes = object.intValue();
-        //         int hours = minutes / 60;
-        //         minutes %= 60;
-        //         return String.format("%02d:%02d", hours, minutes);
-        //     }
+        NumberAxis xAxis = new NumberAxis(0, 24 * 60, 60);
+        xAxis.setTickLabelFormatter(new StringConverter<Number>() {
+            @Override
+            public String toString(Number object) {
+                int minutes = object.intValue();
+                int hours = minutes / 60;
+                return String.format("%02d:%02d", hours % 24, minutes % 60);
+            }
 
-        //     @Override
-        //     public Number fromString(String string) {
-        //         return null;
-        //     }
-        // });
+            @Override
+            public Number fromString(String string) {
+                return null;
+            }
+        });
 
         // Create the y-axis representing integers
         NumberAxis yAxis = new NumberAxis();
@@ -58,7 +58,7 @@ public class App extends Application {
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
 
         // Generate data for the series
-        generateData(series);
+        generateAndScaleData(series);
 
         // Add the series to the line chart
         lineChart.getData().add(series);
@@ -80,6 +80,36 @@ public class App extends Application {
         stage.show();
     }
 
+
+    private void generateAndScaleData(XYChart.Series<Number, Number> series) {
+        // Assuming you have a list of appointments with start and end timestamps
+        List<Appointment> appointments = getAppointments();
+    
+        // Convert the timestamps to time values in minutes
+        for (int i = 0; i < 24; i++) {
+
+            // Add the data points to the series
+            long start = Timestamp.valueOf("2023-01-01 00:00:00").getTime() / (1000 * 60);
+            long end = Timestamp.valueOf("2023-01-01 00:00:00").getTime() / (1000 * 60);
+
+            double position = i / 24.0;
+
+            long time = (long) (start + (end - start) * position);
+
+            // Count the number of intersections for the current time
+            int intersectionCount = 0;
+            for (Appointment appointment : appointments) {
+                if (appointment.intersects(time)) {
+                    intersectionCount++;
+                }
+            }
+
+            // Add the data point to the series
+            series.getData().add(new XYChart.Data<>(position, intersectionCount));
+
+        }
+    }
+    
     private void generateData(XYChart.Series<Number, Number> series) {
         // Sample list of appointments
         ObservableList<Appointment> appointments = getAppointments();
@@ -88,20 +118,19 @@ public class App extends Application {
         for (double x = 0; x <= 1; x += 0.01) {
             // Calculate the time for the current x-axis value
             long startTimestamp = Timestamp.valueOf("2023-01-01 00:00:00").getTime();
-            long endTimestamp = Timestamp.valueOf("2023-01-01 23:59:59").getTime();
+            long endTimestamp = Timestamp.valueOf("2023-01-02 00:00:00").getTime();
             long time = (long) (startTimestamp + (endTimestamp - startTimestamp) * x);
 
             // Count the number of intersections for the current time
             int intersectionCount = 0;
             for (Appointment appointment : appointments) {
-                if (time >= appointment.getStartTime().getTime() && time <= appointment.getEndTime().getTime()) {
+                if (appointment.intersects(time)) {
                     intersectionCount++;
                 }
             }
 
             // Add the data point to the series
-            XYChart.Data<Number, Number> dataPoint = new XYChart.Data<>(x, intersectionCount);
-            series.getData().add(dataPoint);
+            series.getData().add(new XYChart.Data<>(x, intersectionCount));
         }
     }
 
@@ -111,7 +140,9 @@ public class App extends Application {
         ObservableList<Appointment> appointments = FXCollections.observableArrayList();
 
         appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 08:30:00"), Timestamp.valueOf("2023-01-01 09:30:00")));
+        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 11:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
         appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 13:30:00")));
+        appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 12:00:00"), Timestamp.valueOf("2023-01-01 12:30:00")));
         appointments.add(new Appointment(Timestamp.valueOf("2023-01-01 15:00:00"), Timestamp.valueOf("2023-01-01 16:30:00")));
 
         return appointments;

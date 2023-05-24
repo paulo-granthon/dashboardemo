@@ -15,11 +15,11 @@ class Appointment {
         return time >= startTime.getTime() && time <= endTime.getTime();
     }
 
-    public Timestamp getStartTime() {
+    public Timestamp getStart() {
         return startTime;
     }
 
-    public Timestamp getEndTime() {
+    public Timestamp getEnd() {
         return endTime;
     }
 }
